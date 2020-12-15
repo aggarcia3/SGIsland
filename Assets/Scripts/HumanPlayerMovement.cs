@@ -97,7 +97,7 @@ namespace Scripts.Player
             exhaustedBreathingAudio.volume = 0;
             exhaustedBreathingAudio.pitch = baseExhaustedBreathingAudioPitch;
             exhaustedBreathingAudio.minDistance = 0;
-            exhaustedBreathingAudio.maxDistance = float.MaxValue;
+            exhaustedBreathingAudio.maxDistance = 10;
             exhaustedBreathingAudio.rolloffMode = AudioRolloffMode.Linear;
             exhaustedBreathingAudio.Play();
         }

@@ -7,6 +7,8 @@ TagManager:
   - IslandWater
   - IslandBoundsCollider
   - IslandAmbienceMusic
+  - IslandStars
+  - IslandWorldOverlayCamera
   layers:
   - Default
   - TransparentFX
@@ -16,7 +18,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - Stars
   - 
   - 
   - 
