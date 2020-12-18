@@ -17,32 +17,32 @@ MonoBehaviour:
   m_RendererType: 1
   m_RendererData: {fileID: 0}
   m_RendererDataList:
-  - {fileID: 11400000, guid: 3aaffafe3b2a8a04a9c2895db6a52e05, type: 2}
+  - {fileID: 11400000, guid: b6a806ac98e100642b807b3f45fa0163, type: 2}
   m_DefaultRendererIndex: 0
-  m_RequireDepthTexture: 0
+  m_RequireDepthTexture: 1
   m_RequireOpaqueTexture: 0
   m_OpaqueDownsampling: 1
-  m_SupportsTerrainHoles: 1
-  m_SupportsHDR: 1
+  m_SupportsTerrainHoles: 0
+  m_SupportsHDR: 0
   m_MSAA: 1
   m_RenderScale: 1
   m_MainLightRenderingMode: 1
   m_MainLightShadowsSupported: 1
   m_MainLightShadowmapResolution: 2048
-  m_AdditionalLightsRenderingMode: 1
+  m_AdditionalLightsRenderingMode: 2
   m_AdditionalLightsPerObjectLimit: 4
   m_AdditionalLightShadowsSupported: 1
   m_AdditionalLightsShadowmapResolution: 512
   m_ShadowDistance: 20
   m_ShadowCascades: 0
-  m_Cascade2Split: 0.37830922
+  m_Cascade2Split: 0.40887654
   m_Cascade4Split: {x: 0.08342711, y: 0.22669417, z: 0.8817844}
   m_ShadowDepthBias: 2.5
   m_ShadowNormalBias: 0.33
   m_SoftShadowsSupported: 1
   m_UseSRPBatcher: 1
   m_SupportsDynamicBatching: 0
-  m_MixedLightingSupported: 1
+  m_MixedLightingSupported: 0
   m_DebugLevel: 0
   m_UseAdaptivePerformance: 1
   m_ColorGradingMode: 0

@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace Scripts.TerrainGeneration
+namespace SGIsland.TerrainGeneration
 {
     /// <summary>
     /// Populates the inspector GUI for the <see cref="IslandTerrainGenerator"/> script component.
@@ -9,14 +9,19 @@ namespace Scripts.TerrainGeneration
     [CustomEditor(typeof(IslandTerrainGenerator))]
     public class IslandTerrainGeneratorEditor : Editor
     {
-        private SerializedProperty mainNoiseGeneratorProperty, secondaryNoiseGeneratorProperty, maximumTerrainAmplitudeProperty, terrainNoiseOctavesProperty,
-            terrainNoiseFrequencyProperty, terrainNoisePersistenceProperty, terrainNoiseLacunarityProperty, islandRadiusVarianceProperty,
-            islandShorelineLengthProperty, minimumHeightAboveSeaProperty, terrainLayerTextureSizeProperty;
+        private SerializedProperty islandWaterProperty, islandBoundsProperty, playerProperty, starsProperty, mainNoiseGeneratorProperty,
+            secondaryNoiseGeneratorProperty,  maximumTerrainAmplitudeProperty, terrainNoiseOctavesProperty, terrainNoiseFrequencyProperty,
+            terrainNoisePersistenceProperty, terrainNoiseLacunarityProperty, islandRadiusVarianceProperty, islandShorelineLengthProperty,
+            minimumHeightAboveSeaProperty, terrainLayerTextureSizeProperty;
 
         private long terrainSeed;
 
         private void OnEnable()
         {
+            islandWaterProperty = serializedObject.FindProperty("islandWater");
+            islandBoundsProperty = serializedObject.FindProperty("islandBounds");
+            playerProperty = serializedObject.FindProperty("player");
+            starsProperty = serializedObject.FindProperty("stars");
             mainNoiseGeneratorProperty = serializedObject.FindProperty("_mainNoiseGenerator");
             secondaryNoiseGeneratorProperty = serializedObject.FindProperty("_secondaryNoiseGenerator");
             maximumTerrainAmplitudeProperty = serializedObject.FindProperty("_maximumTerrainAmplitude");
@@ -36,6 +41,10 @@ namespace Scripts.TerrainGeneration
 
             serializedObject.Update();
 
+            EditorGUILayout.PropertyField(islandWaterProperty, new GUIContent("Water"));
+            EditorGUILayout.PropertyField(islandBoundsProperty, new GUIContent("Island Bounds"));
+            EditorGUILayout.PropertyField(playerProperty, new GUIContent("Player"));
+            EditorGUILayout.PropertyField(starsProperty, new GUIContent("Stars"));
             terrainSeed = EditorGUILayout.LongField("Terrain Seed", terrainSeed);
             EditorGUILayout.PropertyField(mainNoiseGeneratorProperty, new GUIContent("Main Noise Generator"));
             EditorGUILayout.PropertyField(secondaryNoiseGeneratorProperty, new GUIContent("Secondary Noise Generator"));

@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/GameInit.unity
+    guid: 0724461365411b948b21091d88d34a5d
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 30572923c82fde9458199e77a9379551
+  - enabled: 1
+    path: Assets/Scenes/IslandLoadingScreen.unity
+    guid: 2b6185bcc3fd9ba4ba942ddb7a410f05
+  - enabled: 1
     path: Assets/Scenes/Island.unity
-    guid: 9fc0d4010bbf28b4594072e72b8655ab
+    guid: c38a732846764b844a1cd6fc945c4465
   m_configObjects: {}
