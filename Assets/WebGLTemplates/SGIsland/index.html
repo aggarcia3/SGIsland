@@ -28,8 +28,12 @@
 				productVersion: "{{{ PRODUCT_VERSION }}}",
 			});
 			function resizeGameCanvasToWindow() {
-				gameCanvas.width = Math.max(window.innerWidth, {{{MINIMUM_WIDTH}}});
-				gameCanvas.height = Math.max(window.innerHeight, {{{MINIMUM_HEIGHT}}});
+				var w = Math.min(Math.max(window.innerWidth, 640), window.screen.availWidth);
+				var h = Math.min(Math.max(window.innerHeight, 480), window.screen.availHeight);
+				gameCanvas.width = w;
+				gameCanvas.height = h;
+				gameCanvas.style.width = w + "px";
+				gameCanvas.style.height = h + "px";
 			}
 			window.addEventListener('resize', resizeGameCanvasToWindow);
 			resizeGameCanvasToWindow();
