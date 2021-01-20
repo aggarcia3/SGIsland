@@ -253,7 +253,6 @@ namespace SGIsland.TerrainGeneration
 
             // Pass the terrain seed to the star particle emitter seed
             stars.randomSeed = (uint)seed;
-            stars.Play();
 
             // Make sure the basemap distance is appropriate for the maximum height of the terrain
             // (so if the player looks down when in the top of a mountain things look okay)
