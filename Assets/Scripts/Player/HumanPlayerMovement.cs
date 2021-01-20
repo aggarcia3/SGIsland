@@ -199,7 +199,7 @@ namespace SGIsland.Player
                 throw new ArgumentException("One or both of the player camera or world bounds objects were null");
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             // Calculate the fall speed
             float fallSpeed;
@@ -217,11 +217,11 @@ namespace SGIsland.Player
             }
 
             // Get movement, grounded and run intensities.
-            // Grounded intensity is maximum when at least 60 frames of gravity acceleration were not applied
+            // Grounded intensity is maximum when at least we reached a fraction of the terminal velocity
             float rightMovementIntensity = Input.GetAxis("Movement X");
             float forwardMovementIntensity = Input.GetAxis("Movement Y");
             float groundedIntensity = Mathf.LerpUnclamped(
-                Mathf.Max(1 - fallSpeed / (60 * Physics.gravity.y * Time.deltaTime), 0),
+                Mathf.Max(1 - fallSpeed / (gravityTerminalSpeed * 0.75f), 0),
                 0, inWaterIntensity
             );
             float runIntensity;
@@ -238,6 +238,19 @@ namespace SGIsland.Player
 
             previousRunIntensity = runIntensity;
             previousInWaterIntensity = inWaterIntensity;
+
+            // Compute player look direction vector according to horizontal and vertical look input
+            Vector3 lookDirection = transform.forward;
+            Vector3 upContribution = transform.up * 0.01f * Input.GetAxis("Look Y") / Time.deltaTime;
+            lookDirection += upContribution;
+            lookDirection += transform.right * 0.01f * Input.GetAxis("Look X") / Time.deltaTime;
+
+            // Do not allow extreme up or down angles (they look bad)
+            float angleWithUp = Vector3.Angle(Vector3.up, lookDirection);
+            if (angleWithUp < 15 || angleWithUp > 165)
+                lookDirection -= upContribution;
+
+            transform.localRotation = Quaternion.LookRotation(lookDirection);
 
             // Now get the movement speed. Take into account whether we are airborne or in water
             float movementSpeed = Mathf.LerpUnclamped(
@@ -356,22 +369,6 @@ namespace SGIsland.Player
 
             playerCamera.transform.position = cameraPosition;
             playerCamera.transform.localRotation = transform.localRotation;
-        }
-
-        private void Update()
-        {
-            // Compute player look direction vector according to horizontal and vertical look input
-            Vector3 lookDirection = transform.forward;
-            Vector3 upContribution = transform.up * 0.01f * Input.GetAxis("Look Y") / Time.deltaTime;
-            lookDirection += upContribution;
-            lookDirection += transform.right * 0.01f * Input.GetAxis("Look X") / Time.deltaTime;
-
-            // Do not allow extreme up or down angles (they look bad)
-            float angleWithUp = Vector3.Angle(Vector3.up, lookDirection);
-            if (angleWithUp < 15 || angleWithUp > 165)
-                lookDirection -= upContribution;
-
-            transform.localRotation = Quaternion.LookRotation(lookDirection);
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
