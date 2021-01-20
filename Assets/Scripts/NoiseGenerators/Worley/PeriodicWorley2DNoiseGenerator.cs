@@ -17,7 +17,7 @@ namespace SGIsland.NoiseGenerators.Worley
         private const float DensityAdjustment = 0.398150f;
 
         /// <summary>
-        /// LUT table copied from "Texturing & Modeling – A Procedural Approach" (3rd Edition), p. 150.
+        /// LUT copied from "Texturing & Modeling – A Procedural Approach" (3rd Edition), p. 150.
         /// See the book for more insight about how it was computed.
         /// </summary>
         private static readonly uint[] CellPointCount = {

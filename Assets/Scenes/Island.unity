@@ -178,9 +178,13 @@ MonoBehaviour:
   walkSpeed: 1.4
   timeToFullRunIntensity: 0.5
   runSpeed: 9.5
+  airborneMovementSpeedMultiplier: 2
+  swimmingMovementSpeedMultiplier: 0.25
+  waterHeightReductionCoefficient: 0.11
   leftFootstepAudioClip: {fileID: 8300000, guid: 3c3c84d6add349c4ea728cb349466ec5, type: 3}
   rightFootstepAudioClip: {fileID: 8300000, guid: 2ab989c9ac9c41442be1aa851e58063c, type: 3}
-  maximumFootstepVolume: 1
+  swimmingStrokeAudioClip: {fileID: 8300000, guid: 35ef02f2d782d104a82b25a3c65414c6, type: 3}
+  maximumMovementSoundVolume: 1
   footstepStrideLength: 0.95
   baseHorizontalEyeBobbingIntensity: 0.5
   baseVerticalEyeBobbingIntensity: 0.25
@@ -464,7 +468,7 @@ ParticleSystem:
   cullingMode: 1
   ringBufferMode: 1
   ringBufferLoopRange: {x: 0, y: 1}
-  looping: 0
+  looping: 1
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -5621,7 +5625,7 @@ Transform:
   m_GameObject: {fileID: 1322773716}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 4000, y: 1, z: 4000}
+  m_LocalScale: {x: 950, y: 1, z: 950}
   m_Children: []
   m_Father: {fileID: 174977462}
   m_RootOrder: 0
@@ -5695,7 +5699,6 @@ MonoBehaviour:
   player: {fileID: 11863962}
   stars: {fileID: 322063902}
   _mainNoiseGenerator: {fileID: 11400000, guid: 069b070512cb7e24798e447890f70240, type: 2}
-  _secondaryNoiseGenerator: {fileID: 11400000, guid: 53ae33e78ce75754d9315fadb0b8066f, type: 2}
   _maximumTerrainAmplitude: 0.12
   _terrainNoiseOctaves: 10
   _terrainNoiseFrequency: 4

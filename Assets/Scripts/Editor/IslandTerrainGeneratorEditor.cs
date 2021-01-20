@@ -10,9 +10,9 @@ namespace SGIsland.TerrainGeneration
     public class IslandTerrainGeneratorEditor : Editor
     {
         private SerializedProperty islandWaterProperty, islandBoundsProperty, playerProperty, starsProperty, mainNoiseGeneratorProperty,
-            secondaryNoiseGeneratorProperty,  maximumTerrainAmplitudeProperty, terrainNoiseOctavesProperty, terrainNoiseFrequencyProperty,
-            terrainNoisePersistenceProperty, terrainNoiseLacunarityProperty, islandRadiusVarianceProperty, islandShorelineLengthProperty,
-            minimumHeightAboveSeaProperty, terrainLayerTextureSizeProperty;
+            maximumTerrainAmplitudeProperty, terrainNoiseOctavesProperty, terrainNoiseFrequencyProperty, terrainNoisePersistenceProperty,
+            terrainNoiseLacunarityProperty, islandRadiusVarianceProperty, islandShorelineLengthProperty, minimumHeightAboveSeaProperty,
+            terrainLayerTextureSizeProperty;
 
         private long terrainSeed;
 
@@ -23,7 +23,6 @@ namespace SGIsland.TerrainGeneration
             playerProperty = serializedObject.FindProperty("player");
             starsProperty = serializedObject.FindProperty("stars");
             mainNoiseGeneratorProperty = serializedObject.FindProperty("_mainNoiseGenerator");
-            secondaryNoiseGeneratorProperty = serializedObject.FindProperty("_secondaryNoiseGenerator");
             maximumTerrainAmplitudeProperty = serializedObject.FindProperty("_maximumTerrainAmplitude");
             terrainNoiseOctavesProperty = serializedObject.FindProperty("_terrainNoiseOctaves");
             terrainNoiseFrequencyProperty = serializedObject.FindProperty("_terrainNoiseFrequency");
@@ -47,7 +46,6 @@ namespace SGIsland.TerrainGeneration
             EditorGUILayout.PropertyField(starsProperty, new GUIContent("Stars"));
             terrainSeed = EditorGUILayout.LongField("Terrain Seed", terrainSeed);
             EditorGUILayout.PropertyField(mainNoiseGeneratorProperty, new GUIContent("Main Noise Generator"));
-            EditorGUILayout.PropertyField(secondaryNoiseGeneratorProperty, new GUIContent("Secondary Noise Generator"));
             EditorGUILayout.Slider(maximumTerrainAmplitudeProperty, 0, 1, "Maximum Terrain Amplitude");
             EditorGUILayout.IntSlider(terrainNoiseOctavesProperty, 1, 32, "Terrain Noise Octaves");
             EditorGUILayout.Slider(terrainNoiseFrequencyProperty, 0.1f, 64, "Terrain Noise Frequency");

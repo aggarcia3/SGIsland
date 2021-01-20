@@ -29,5 +29,5 @@ Material:
     m_Colors:
     - _DeepWaterColor: {r: 0.4493592, g: 0.55579555, b: 0.6226415, a: 1}
     - _ShallowWaterColor: {r: 0.3843137, g: 0.7105311, b: 0.7607843, a: 0.5019608}
-    - _WaveNormalTiling: {r: 256, g: 512, b: 0, a: 0}
+    - _WaveNormalTiling: {r: 128, g: 256, b: 0, a: 0}
   m_BuildTextureStacks: []

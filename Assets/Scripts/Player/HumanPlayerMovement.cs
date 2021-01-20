@@ -27,12 +27,23 @@ namespace SGIsland.Player
         [SerializeField]
         private float runSpeed = 9.5f; // m/s
         [SerializeField]
+        [Range(0, 10)]
+        private float airborneMovementSpeedMultiplier = 2.0f;
+        [SerializeField]
+        [Range(0, 1)]
+        private float swimmingMovementSpeedMultiplier = 0.33f;
+        [SerializeField]
+        [Range(0, 1)]
+        private float waterHeightReductionCoefficient = 0.11f;
+        [SerializeField]
         private AudioClip leftFootstepAudioClip;
         [SerializeField]
         private AudioClip rightFootstepAudioClip;
         [SerializeField]
+        private AudioClip swimmingStrokeAudioClip;
+        [SerializeField]
         [Range(0, 1)]
-        private float maximumFootstepVolume = 1;
+        private float maximumMovementSoundVolume = 1;
         [SerializeField]
         [Range(0.5f, 1.5f)]
         private float footstepStrideLength = 0.95f;
@@ -80,9 +91,11 @@ namespace SGIsland.Player
 
         private CharacterController characterController;
         private AudioSource[] footstepAudioSources;
+        private AudioSource swimmingStrokeAudioSource;
         private AudioSource exhaustedBreathingAudio;
         private AudioSource howlingWindAudio;
         private float baseVocalizationPitch;
+        private float originalCharacterControllerHeight;
 
         private float currentGravitySpeed = 0;
         private Vector3 characterVelocity = Vector3.zero;
@@ -91,13 +104,17 @@ namespace SGIsland.Player
         private float timeRunning = 0;
         private float footstepStrideDistance = 0;
         private int previousFootstepIndex = 0;
-        private bool inWater = false;
+        private float inWaterIntensity = 0;
+        private float previousInWaterIntensity = 0;
 
         private void Start()
         {
             characterController = GetComponent<CharacterController>();
 
             IsFemale = isFemale;
+
+            // Store the original height of the character controller
+            originalCharacterControllerHeight = characterController.height;
 
             // Create the footstep sound sources
             footstepAudioSources = new AudioSource[2];
@@ -121,6 +138,20 @@ namespace SGIsland.Player
                 audioSource.playOnAwake = false;
                 audioSource.rolloffMode = AudioRolloffMode.Linear;
             }
+
+            // Create swimming stroke sound source
+            swimmingStrokeAudioSource = gameObject.AddComponent<AudioSource>();
+            swimmingStrokeAudioSource.clip = swimmingStrokeAudioClip;
+            swimmingStrokeAudioSource.loop = true;
+            swimmingStrokeAudioSource.bypassEffects = true;
+            swimmingStrokeAudioSource.bypassListenerEffects = true;
+            swimmingStrokeAudioSource.bypassReverbZones = true;
+            swimmingStrokeAudioSource.dopplerLevel = 0;
+            swimmingStrokeAudioSource.spatialBlend = 1;
+            swimmingStrokeAudioSource.minDistance = 6;
+            swimmingStrokeAudioSource.maxDistance = 25;
+            swimmingStrokeAudioSource.playOnAwake = false;
+            swimmingStrokeAudioSource.rolloffMode = AudioRolloffMode.Linear;
 
             // Create the exhausted breathing sound source component to use when running
             exhaustedBreathingAudio = gameObject.AddComponent<AudioSource>();
@@ -168,8 +199,7 @@ namespace SGIsland.Player
                 throw new ArgumentException("One or both of the player camera or world bounds objects were null");
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Correctness", "UNT0004:Time.fixedDeltaTime used with Update", Justification = "Intended usage to yield mathematical correct results")]
-        private void Update()
+        private void FixedUpdate()
         {
             // Calculate the fall speed
             float fallSpeed;
@@ -187,14 +217,15 @@ namespace SGIsland.Player
             }
 
             // Get movement, grounded and run intensities.
-            // Grounded intensity is maximum when at least eight frames of gravity acceleration were not applied.
-            // Grounded feet intensity is stricter than grounded intensity, and is meant to represent more accurately
-            // if the player feet are touching the ground
+            // Grounded intensity is maximum when at least 60 frames of gravity acceleration were not applied
             float rightMovementIntensity = Input.GetAxis("Movement X");
             float forwardMovementIntensity = Input.GetAxis("Movement Y");
-            float groundedIntensity = inWater ? 0 : Mathf.Max(1 - fallSpeed / (8 * Physics.gravity.y * Time.deltaTime / Time.fixedDeltaTime), 0);
+            float groundedIntensity = Mathf.LerpUnclamped(
+                Mathf.Max(1 - fallSpeed / (60 * Physics.gravity.y * Time.deltaTime), 0),
+                0, inWaterIntensity
+            );
             float runIntensity;
-            if (forwardMovementIntensity > 0)
+            if (forwardMovementIntensity > 0 && previousInWaterIntensity <= inWaterIntensity)
             {
                 float rawRunAxis = Input.GetAxisRaw("Run");
                 float runIntensityStep = Time.deltaTime / timeToFullRunIntensity;
@@ -206,24 +237,14 @@ namespace SGIsland.Player
             }
 
             previousRunIntensity = runIntensity;
+            previousInWaterIntensity = inWaterIntensity;
 
-            // Now get the movement speed
-            float movementSpeed = Mathf.LerpUnclamped(walkSpeed, runSpeed, runIntensity);
-
-            // TODO: height and speed reduction to radius for swimming
-
-            // Compute player look direction vector according to horizontal and vertical look input
-            Vector3 lookDirection = transform.forward;
-            Vector3 upContribution = transform.up * 0.02f * Input.GetAxis("Look Y") / Time.deltaTime;
-            lookDirection += upContribution;
-            lookDirection += transform.right * 0.02f * Input.GetAxis("Look X") / Time.deltaTime;
-
-            // Do not allow extreme up or down angles (they look bad)
-            float angleWithUp = Vector3.Angle(Vector3.up, lookDirection);
-            if (angleWithUp < 15 || angleWithUp > 165)
-                lookDirection -= upContribution;
-
-            transform.localRotation = Quaternion.LookRotation(lookDirection);
+            // Now get the movement speed. Take into account whether we are airborne or in water
+            float movementSpeed = Mathf.LerpUnclamped(
+                walkSpeed, Mathf.LerpUnclamped(runSpeed, runSpeed * swimmingMovementSpeedMultiplier, inWaterIntensity),
+                runIntensity
+            );
+            movementSpeed += fallSpeed / gravityTerminalSpeed * airborneMovementSpeedMultiplier * movementSpeed;
 
             // Move the character along the forward and right directions according to the input and where it is facing.
             // These direction vectors of the transform matrix already take into account rotation.
@@ -256,10 +277,10 @@ namespace SGIsland.Player
             }
 
             // Compute movement intensity as the maximum absolute intensity of both movement directions
-            float movementIntensity = Math.Max(FastMathf.Abs(forwardMovementIntensity), FastMathf.Abs(rightMovementIntensity));
+            float movementIntensity = Mathf.Max(FastMathf.Abs(forwardMovementIntensity), FastMathf.Abs(rightMovementIntensity));
 
             // Update exhausted running audio pitch and volume
-            timeRunning = Math.Max(timeRunning - (1 - movementIntensity * walkRestCoefficient) * Time.deltaTime, 0);
+            timeRunning = Mathf.Max(timeRunning - (1 - movementIntensity * walkRestCoefficient) * Time.deltaTime, 0);
             timeRunning = Mathf.Min(timeRunning + runIntensity * groundedIntensity * Time.deltaTime, timeUntilMaximumExhaustion);
             exhaustedBreathingAudio.volume = timeRunning / timeUntilMaximumExhaustion * maximumExhaustedBreathingAudioVolume;
             if (exhaustedBreathingAudio.volume > 0)
@@ -288,18 +309,36 @@ namespace SGIsland.Player
             }
 
             // The player has just used their other feet to complete a step. Play the appropriate sound
+            float halfMovementSoundVolume = maximumMovementSoundVolume * 0.5f;
             if (footstepIndex != previousFootstepIndex)
             {
-                float halfFootstepVolume = maximumFootstepVolume * 0.5f;
-                footstepAudioSources[footstepIndex].volume = halfFootstepVolume + halfFootstepVolume * runIntensity;
+                footstepAudioSources[footstepIndex].volume = halfMovementSoundVolume + halfMovementSoundVolume * runIntensity;
                 footstepAudioSources[footstepIndex].Play();
             }
 
             previousFootstepIndex = footstepIndex;
 
+            // Play swimming stroke sound effect with the appropriate volume if swimming
+            float previousSwimmingStrokeSoundVolume = swimmingStrokeAudioSource.volume;
+            float swimmingStrokeSoundVolume = inWaterIntensity * (halfMovementSoundVolume * movementIntensity + halfMovementSoundVolume * runIntensity);
+
+            swimmingStrokeAudioSource.volume = swimmingStrokeSoundVolume;
+            if (swimmingStrokeSoundVolume > 0 && previousSwimmingStrokeSoundVolume <= 0)
+            {
+                swimmingStrokeAudioSource.Play();
+            }
+
+            if (swimmingStrokeSoundVolume <= 0)
+            {
+                swimmingStrokeAudioSource.Stop();
+            }
+
             // Update howling wind audio volume by changing the minimum distance.
             // Unity will take care of calculating the volume following a logarithmic smoothing function
-            howlingWindAudio.minDistance = inWater ? 0 : minimumWindIntensity + Math.Max(1 - groundedIntensity - 0.33f, 0) / 0.66f * (1 - minimumWindIntensity);
+            howlingWindAudio.minDistance = Mathf.LerpUnclamped(
+                minimumWindIntensity + Mathf.Max(1 - groundedIntensity - 0.33f, 0) / 0.66f * (1 - minimumWindIntensity),
+                0, inWaterIntensity
+            );
 
             // Update the camera position and rotation.
             // Eye position
@@ -319,9 +358,37 @@ namespace SGIsland.Player
             playerCamera.transform.localRotation = transform.localRotation;
         }
 
+        private void Update()
+        {
+            // Compute player look direction vector according to horizontal and vertical look input
+            Vector3 lookDirection = transform.forward;
+            Vector3 upContribution = transform.up * 0.01f * Input.GetAxis("Look Y") / Time.deltaTime;
+            lookDirection += upContribution;
+            lookDirection += transform.right * 0.01f * Input.GetAxis("Look X") / Time.deltaTime;
+
+            // Do not allow extreme up or down angles (they look bad)
+            float angleWithUp = Vector3.Angle(Vector3.up, lookDirection);
+            if (angleWithUp < 15 || angleWithUp > 165)
+                lookDirection -= upContribution;
+
+            transform.localRotation = Quaternion.LookRotation(lookDirection);
+        }
+
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            inWater = hit.gameObject.layer == LayerMask.NameToLayer("Water");
+            bool inWater = hit.gameObject.layer == LayerMask.NameToLayer("Water");
+            if (inWater)
+            {
+                // If water is shallow (less deep than half the player height), ignore
+                inWater = !Physics.Linecast(hit.point, hit.point + Vector3.down * originalCharacterControllerHeight / 2, LayerMask.GetMask("Default"));
+            }
+
+            // Set the in water intensity attribute (it is convenient the most convenient form for most calculations)
+            inWaterIntensity = inWater ? 1 : 0;
+
+            // Update charater controller height to simulate switching to and from a swimming pose
+            characterController.height = originalCharacterControllerHeight *
+                Mathf.LerpUnclamped(1, waterHeightReductionCoefficient, inWaterIntensity);
         }
     }
 }

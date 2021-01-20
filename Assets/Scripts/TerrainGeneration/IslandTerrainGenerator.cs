@@ -33,8 +33,6 @@ namespace SGIsland.TerrainGeneration
         [SerializeField]
         private Abstract2DCoherentNoiseGenerator _mainNoiseGenerator;
         [SerializeField]
-        private Abstract2DCoherentPeriodicNoiseGenerator _secondaryNoiseGenerator;
-        [SerializeField]
         private float _maximumTerrainAmplitude = 0.12f;
         [SerializeField]
         private uint _terrainNoiseOctaves = 10;
@@ -255,6 +253,7 @@ namespace SGIsland.TerrainGeneration
 
             // Pass the terrain seed to the star particle emitter seed
             stars.randomSeed = (uint)seed;
+            stars.Play();
 
             // Make sure the basemap distance is appropriate for the maximum height of the terrain
             // (so if the player looks down when in the top of a mountain things look okay)
@@ -504,7 +503,7 @@ namespace SGIsland.TerrainGeneration
                 yield return waitForFixedUpdate;
             }
 
-            sandTexture.Apply();
+            sandTexture.Apply(true, true);
         }
 
         private IEnumerator GenerateGrassTexture(Texture2D grassTexture, long seed, Action<TerrainGenerationOperation> workUnitDoneCallback)
@@ -537,7 +536,7 @@ namespace SGIsland.TerrainGeneration
                 yield return waitForFixedUpdate;
             }
 
-            grassTexture.Apply();
+            grassTexture.Apply(true, true);
         }
 
         private IEnumerator GenerateDirtTexture(Texture2D dirtTexture, long seed, Action<TerrainGenerationOperation> workUnitDoneCallback)
@@ -565,69 +564,76 @@ namespace SGIsland.TerrainGeneration
                     );
                 }
 
-                workUnitDoneCallback.Invoke(TerrainGenerationOperation.DIRT_TEXUTRE_GENERATION);
                 yield return waitForFixedUpdate;
+                workUnitDoneCallback.Invoke(TerrainGenerationOperation.DIRT_TEXTURE_GENERATION);
             }
 
-            dirtTexture.Apply();
+            dirtTexture.Apply(true, true);
         }
 
         private IEnumerator GenerateRockTexture(Texture2D rockTexture, long seed, Action<TerrainGenerationOperation> workUnitDoneCallback)
         {
             var rockTextureData = rockTexture.GetRawTextureData<Color32>();
+            float halfTerrainLayerTextureOffByOneWidth = (float)(_terrainLayerTextureSize.x - 1) / 2;
+            float halfTerrainLayerTextureOffByOneHeight = (float)(_terrainLayerTextureSize.y - 1) / 2;
 
             int i = 0;
             for (int x = 0; x < _terrainLayerTextureSize.x; ++x)
             {
-                float u = (float)x / _terrainLayerTextureSize.x;
+                // Off by one so the edges match exactly
+                float u = FastMathf.Abs(x - halfTerrainLayerTextureOffByOneWidth) / halfTerrainLayerTextureOffByOneWidth;
 
                 for (int y = 0; y < _terrainLayerTextureSize.y; ++y, ++i)
                 {
-                    float v = (float)y / _terrainLayerTextureSize.y;
-                    float ut = _secondaryNoiseGenerator.FractalNoise2D(seed, u, v, 16, 1, 4, 0.33f, 2);
+                    float v = FastMathf.Abs(y - halfTerrainLayerTextureOffByOneHeight) / halfTerrainLayerTextureOffByOneHeight;
+                    float ut = _mainNoiseGenerator.Noise2D(seed, u * 512, v * 512);
 
                     rockTextureData[i] = new Color32(
-                        (byte) (Mathf.LerpUnclamped(0.75f, 0.29f, ut) * 255),
-                        (byte) (Mathf.LerpUnclamped(0.73f, 0.22f, ut) * 255),
-                        (byte) (Mathf.LerpUnclamped(0.66f, 0.13f, ut) * 255),
+                        (byte)(Mathf.Lerp(0.75f, 0.29f, ut) * 255),
+                        (byte)(Mathf.Lerp(0.73f, 0.22f, ut) * 255),
+                        (byte)(Mathf.Lerp(0.66f, 0.13f, ut) * 255),
                         0 // No smoothness, so we don't get specular highlights
                     );
                 }
 
-                workUnitDoneCallback.Invoke(TerrainGenerationOperation.ROCK_TEXTURE_GENERATION);
                 yield return waitForFixedUpdate;
+                workUnitDoneCallback.Invoke(TerrainGenerationOperation.ROCK_TEXTURE_GENERATION);
             }
 
-            rockTexture.Apply();
+            rockTexture.Apply(true, true);
         }
 
         private IEnumerator GenerateTerrainLayersAndAlphaMap(
             TerrainData terrainData, Texture2D sandTexture, Texture2D grassTexture, Texture2D dirtTexture, Texture2D rockTexture,
             float minimumLandHeightAboveSea, Action<TerrainGenerationOperation> workUnitDoneCallback)
         {
+            float maximumTerrainHeight = minimumLandHeightAboveSea + (1 - minimumLandHeightAboveSea) * _maximumTerrainAmplitude;
+            float dirtSummitCutoffHeight = maximumTerrainHeight * 0.5f;
+            float halfLandToDirtSummitHeightDifference = (dirtSummitCutoffHeight - minimumLandHeightAboveSea) * 0.5f;
+
             // Create the sand terrain layer
             TerrainLayer sandLayer = new TerrainLayer();
             sandLayer.metallic = 0.0f;
             sandLayer.diffuseTexture = sandTexture;
-            sandLayer.tileSize = new Vector2(2.0f, 2.0f);
+            sandLayer.tileSize = new Vector2(6.0f, 4.0f);
 
             // Create the grass terrain layer
             TerrainLayer grassLayer = new TerrainLayer();
             grassLayer.metallic = 0.0f;
             grassLayer.diffuseTexture = grassTexture;
-            grassLayer.tileSize = new Vector2(0.5f, 0.5f);
+            grassLayer.tileSize = new Vector2(4.0f, 4.0f);
 
             // Create the dirt terrain layer
             TerrainLayer dirtLayer = new TerrainLayer();
             dirtLayer.metallic = 0.0f;
             dirtLayer.diffuseTexture = dirtTexture;
-            dirtLayer.tileSize = new Vector2(0.5f, 0.5f);
+            dirtLayer.tileSize = new Vector2(8.0f, 8.0f);
 
             // Create the rock terrain layer
             TerrainLayer rockLayer = new TerrainLayer();
             rockLayer.metallic = 0.0f;
             rockLayer.diffuseTexture = rockTexture;
-            rockLayer.tileSize = new Vector2(1.0f, 1.0f);
+            rockLayer.tileSize = new Vector2(6.0f, 6.0f);
 
             // Assign the layers to the terrain data
             terrainData.terrainLayers = new TerrainLayer[] { sandLayer, grassLayer, dirtLayer, rockLayer };
@@ -643,17 +649,19 @@ namespace SGIsland.TerrainGeneration
                     float v = (float)y / terrainData.alphamapHeight;
                     float height = terrainData.GetInterpolatedHeight(u, v) / terrainData.heightmapScale.y;
                     float steepness = terrainData.GetSteepness(u, v) / 90; // Steepness is in degrees
-                    float sandToGrassLerpCoefficient = height / minimumLandHeightAboveSea;
+                    float inverseLightSteepnessCoefficient = 1 - Mathf.Max((steepness - 0.167f) / 0.833f, 0);
+                    float inversePronouncedSteepnessCoefficient = 1 - Mathf.Max((steepness - 0.5f) / 0.5f, 0);
+                    float heightAboveLandAndBelowDirtSummitCutoff = (height > minimumLandHeightAboveSea && height < dirtSummitCutoffHeight) ?
+                        Mathf.Min(height - minimumLandHeightAboveSea, halfLandToDirtSummitHeightDifference) : 0;
 
-                    // TODO: mejorar estas funciones para que sean más bonitas
-                    terrainLayerAlphaMaps[y, x, 0] = Mathf.Lerp(1, 0, sandToGrassLerpCoefficient);
-                    terrainLayerAlphaMaps[y, x, 1] = Mathf.Lerp(0, 1, sandToGrassLerpCoefficient) * (1 - steepness);
-                    terrainLayerAlphaMaps[y, x, 2] = 0;
-                    terrainLayerAlphaMaps[y, x, 3] = steepness;
+                    terrainLayerAlphaMaps[y, x, 0] = Mathf.Max(1 - height / minimumLandHeightAboveSea, 0) * inverseLightSteepnessCoefficient;
+                    terrainLayerAlphaMaps[y, x, 1] = heightAboveLandAndBelowDirtSummitCutoff / halfLandToDirtSummitHeightDifference * inverseLightSteepnessCoefficient;
+                    terrainLayerAlphaMaps[y, x, 2] = height >= dirtSummitCutoffHeight ? inversePronouncedSteepnessCoefficient : 0;
+                    terrainLayerAlphaMaps[y, x, 3] = Mathf.Clamp01(1 - terrainLayerAlphaMaps[y, x, 0] - terrainLayerAlphaMaps[y, x, 1] - terrainLayerAlphaMaps[y, x, 2]);
                 }
 
-                workUnitDoneCallback.Invoke(TerrainGenerationOperation.LAYER_AND_ALPHAMAP_GENERATION);
                 yield return waitForFixedUpdate;
+                workUnitDoneCallback.Invoke(TerrainGenerationOperation.LAYER_AND_ALPHAMAP_GENERATION);
             }
 
             terrainData.SetAlphamaps(0, 0, terrainLayerAlphaMaps);
@@ -668,7 +676,7 @@ namespace SGIsland.TerrainGeneration
             TERRAIN_HOLE_GENERATION,
             SAND_TEXTURE_GENERATION,
             GRASS_TEXTURE_GENERATION,
-            DIRT_TEXUTRE_GENERATION,
+            DIRT_TEXTURE_GENERATION,
             ROCK_TEXTURE_GENERATION,
             LAYER_AND_ALPHAMAP_GENERATION
         }
@@ -698,7 +706,7 @@ public static class TerrainGenerationOperationExtension
                 return "Generando textura de arena";
             case TerrainGenerationOperation.GRASS_TEXTURE_GENERATION:
                 return "Generando textura de hierba";
-            case TerrainGenerationOperation.DIRT_TEXUTRE_GENERATION:
+            case TerrainGenerationOperation.DIRT_TEXTURE_GENERATION:
                 return "Generando textura de tierra";
             case TerrainGenerationOperation.ROCK_TEXTURE_GENERATION:
                 return "Generando textura de roca";
