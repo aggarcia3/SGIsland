@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>SGIsland</title>
+	</head>
+
+	<body style="height: 100%; margin: 0; padding: 0; border: 0">
+		<canvas id="game-canvas" style="display: none; background: #231F20"></canvas>
+		<script src="Build/SGIsland.loader.js"></script>
+		<script>
+			var gameCanvas = document.querySelector("#game-canvas");
+			createUnityInstance(gameCanvas, {
+				dataUrl: "Build/SGIsland.data",
+				frameworkUrl: "Build/SGIsland.framework.js",
+				codeUrl: "Build/SGIsland.wasm",
+				streamingAssetsUrl: "StreamingAssets",
+				companyName: "Alejandro González García",
+				productName: "SGIsland",
+				productVersion: "1.0.0",
+			});
+			function resizeGameCanvasToWindow() {
+				var w = Math.min(Math.max(window.innerWidth, 640), window.screen.width);
+				var h = Math.min(Math.max(window.innerHeight, 480), window.screen.height);
+				gameCanvas.width = w;
+				gameCanvas.height = h;
+				gameCanvas.style.width = w + "px";
+				gameCanvas.style.height = h + "px";
+			}
+			window.addEventListener('resize', resizeGameCanvasToWindow);
+			resizeGameCanvasToWindow();
+			gameCanvas.style.display = "block";
+		</script>
+		<noscript>
+			<p style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif">Por favor, activa JavaScript para ver este contenido.</p>
+		</noscript>
+	</body>
+</html>
